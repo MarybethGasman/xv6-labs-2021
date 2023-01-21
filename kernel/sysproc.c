@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "spinlock.h"
 #include "proc.h"
+#include "syscall.h"
 
 uint64
 sys_exit(void)
@@ -94,4 +95,25 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+
+uint64 sys_trace(void) {
+  int n;
+  if(argint(0, &n) < 0) {
+    return -1;
+  }
+  struct proc *p = myproc();
+
+  char *mask = p->mask;
+
+  for(int i = 0; i < SYS_NUM; i++) {
+    if(n & 1) {
+      mask[i] = '1';
+    }else {
+      mask[i] = '0';
+    }
+    n >>= 1;
+  }
+  return 0;
 }
