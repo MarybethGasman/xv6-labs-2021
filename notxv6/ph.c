@@ -14,9 +14,10 @@ struct entry {
   struct entry *next;
 };
 struct entry *table[NBUCKET];
+pthread_spinlock_t locks[NBUCKET];
 int keys[NKEYS];
 int nthread = 1;
-
+pthread_spinlock_t hash_lock;
 
 double
 now()
@@ -40,6 +41,7 @@ static
 void put(int key, int value)
 {
   int i = key % NBUCKET;
+  pthread_spin_lock(&locks[i]);
 
   // is the key already present?
   struct entry *e = 0;
@@ -52,9 +54,11 @@ void put(int key, int value)
     e->value = value;
   } else {
     // the new is new.
+    // pthread_spin_lock(&hash_lock);
     insert(key, value, &table[i], table[i]);
+    // pthread_spin_unlock(&hash_lock);
   }
-
+  pthread_spin_unlock(&locks[i]);
 }
 
 static struct entry*
@@ -117,7 +121,11 @@ main(int argc, char *argv[])
   for (int i = 0; i < NKEYS; i++) {
     keys[i] = random();
   }
+  pthread_spin_init(&hash_lock, 0);
 
+  for (int i = 0; i < NBUCKET; i++) {
+    pthread_spin_init(&locks[i], 0);
+  }
   //
   // first the puts
   //
