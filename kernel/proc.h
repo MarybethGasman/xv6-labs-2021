@@ -109,4 +109,7 @@ struct proc {
   int alarm;
   int count;
   uint64 callback;
+
+  struct trapframe *trapframe_dup;
+  int callback_once_flag;
 };

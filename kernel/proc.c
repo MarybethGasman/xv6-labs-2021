@@ -122,6 +122,13 @@ found:
   p->alarm = 0;
   p->count = 0;
   p->callback = 0;
+  p->callback_once_flag = 0;
+
+  if((p->trapframe_dup = (struct trapframe *)kalloc()) == 0){
+    freeproc(p);
+    release(&p->lock);
+    return 0;
+  }
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -158,6 +165,11 @@ freeproc(struct proc *p)
   p->trapframe = 0;
   if(p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
+
+  if(p->trapframe_dup) {
+    kfree((void *)p->trapframe_dup);
+  }
+  p->trapframe_dup = 0;
   p->pagetable = 0;
   p->sz = 0;
   p->pid = 0;
